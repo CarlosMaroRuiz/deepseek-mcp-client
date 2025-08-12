@@ -19,7 +19,9 @@
     <a href="#instalación">Instalación</a> •
     <a href="#configuración">Configuración</a> •
     <a href="#uso-básico">Uso</a> •
-    <a href="#ejemplos-prácticos">Ejemplos</a>
+    <a href="#ejemplos-prácticos">Ejemplos</a> •
+    <a href="#servidores-mcp-compatibles">Servidores MCP</a> •
+    <a href="#servidores-mcp-de-ejemplo-para-pruebas">Servidores de Prueba</a>
   </p>
 </div>
 
@@ -248,6 +250,187 @@ async def analizar_tendencias():
 asyncio.run(analizar_tendencias())
 ```
   </div>
+</div>
+
+## 🔗 Servidores MCP Compatibles
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px;">
+  <div style="flex: 1; min-width: 300px; background-color: #f6f8fa; padding: 15px; border-radius: 5px;">
+    <h3>🛍️ MercadoLibre MCP</h3>
+    <p>Servidor MCP básico para extracción automatizada de datos de MercadoLibre México.</p>
+    <p><strong>Características:</strong></p>
+    <ul>
+      <li>Búsqueda de productos</li>
+      <li>Comparación de precios</li>
+      <li>Análisis de tendencias</li>
+      <li>Extracción de información de productos</li>
+    </ul>
+    <p><a href="https://github.com/CarlosMaroRuiz/MCP_MERCADOLIBRE">GitHub Repository</a></p>
+    
+```python
+agent = DeepSeekClient(
+    model='deepseek-chat',
+    system_prompt='Eres un asistente de compras para MercadoLibre.',
+    mcp_servers=['http://localhost:8003/mcp/']  # Servidor MercadoLibre MCP
+)
+
+async def buscar_en_mercadolibre():
+    result = await agent.execute('Busca laptops gamer económicas calidad precio en MercadoLibre México')
+    print(result.output)
+
+asyncio.run(buscar_en_mercadolibre())
+```
+  </div>
+  
+  <div style="flex: 1; min-width: 300px; background-color: #f6f8fa; padding: 15px; border-radius: 5px;">
+    <h3>📝 LaTeX MCP</h3>
+    <p>Servidor MCP para generar documentos LaTeX. Permite la creación, visualización y gestión de documentos LaTeX a través de una interfaz web o mediante comunicación directa con el servidor MCP.</p>
+    <p><strong>Características:</strong></p>
+    <ul>
+      <li>Generación de documentos LaTeX</li>
+      <li>Conversión a PDF</li>
+      <li>Plantillas predefinidas</li>
+      <li>Visualización en tiempo real</li>
+    </ul>
+    <p><a href="https://github.com/CarlosMaroRuiz/MCP_LATEX_BASIC">GitHub Repository</a></p>
+    
+```python
+agent = DeepSeekClient(
+    model='deepseek-chat',
+    system_prompt='Eres un asistente especializado en crear documentos académicos en LaTeX.',
+    mcp_servers=['http://localhost:8004/mcp/']  # Servidor LaTeX MCP
+)
+
+async def generar_documento_latex():
+    result = await agent.execute('Genera un documento LaTeX con una introducción sobre inteligencia artificial')
+    print(result.output)
+
+asyncio.run(generar_documento_latex())
+```
+  </div>
+</div>
+
+## 🧪 Servidores MCP de Ejemplo para Pruebas
+
+<div style="background-color: #f6f8fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+<p>Para probar rápidamente DeepSeek MCP Client, puedes utilizar los siguientes servidores de ejemplo:</p>
+
+### 1. MercadoLibre MCP
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/CarlosMaroRuiz/MCP_MERCADOLIBRE.git
+cd MCP_MERCADOLIBRE
+
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Ejecutar el servidor (por defecto en el puerto 8000)
+python server.py
+```
+
+Prueba con:
+```python
+from deepseek_mcp_client import DeepSeekClient
+import asyncio
+
+agent = DeepSeekClient(
+    model='deepseek-chat',
+    system_prompt='Eres un asistente de compras para MercadoLibre.',
+    mcp_servers=['http://localhost:8000/mcp/']
+)
+
+async def main():
+    result = await agent.execute('Encuentra las 3 mejores laptops gaming por menos de $20,000 MXN en MercadoLibre')
+    print(result.output)
+
+asyncio.run(main())
+```
+
+### 2. LaTeX MCP
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/CarlosMaroRuiz/MCP_LATEX_BASIC.git
+cd MCP_LATEX_BASIC
+
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Ejecutar el servidor (por defecto en el puerto 8001)
+python server.py
+```
+
+Prueba con:
+```python
+from deepseek_mcp_client import DeepSeekClient
+import asyncio
+
+agent = DeepSeekClient(
+    model='deepseek-chat',
+    system_prompt='Eres un asistente para crear documentos LaTeX académicos.',
+    mcp_servers=['http://localhost:8001/mcp/']
+)
+
+async def main():
+    result = await agent.execute('Crea un documento LaTeX con un resumen sobre Machine Learning')
+    print(result.output)
+    # El resultado incluirá la ruta al PDF generado
+
+asyncio.run(main())
+```
+
+### 3. Uso combinado de ambos servidores
+
+```python
+from deepseek_mcp_client import DeepSeekClient
+import asyncio
+
+agent = DeepSeekClient(
+    model='deepseek-chat',
+    system_prompt='Eres un asistente que puede buscar productos y crear informes.',
+    mcp_servers=[
+        'http://localhost:8000/mcp/',  # MercadoLibre MCP
+        'http://localhost:8001/mcp/'   # LaTeX MCP
+    ]
+)
+
+async def main():
+    result = await agent.execute('''
+    Busca 3 laptops gaming en MercadoLibre y crea un informe LaTeX 
+    comparando sus especificaciones, precios y opiniones de usuarios.
+    ''')
+    print(result.output)
+
+asyncio.run(main())
+```
+</div>
+
+## 🔄 Uso Combinado de Servidores MCP
+
+<div style="background-color: #f6f8fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+<p>Una de las ventajas clave de DeepSeek MCP Client es la capacidad de combinar múltiples servidores MCP para crear aplicaciones potentes:</p>
+
+```python
+agent = DeepSeekClient(
+    model='deepseek-chat',
+    system_prompt='''Eres un asistente académico especializado en investigación de mercado.
+    Puedes buscar productos en MercadoLibre y generar informes detallados en LaTeX.''',
+    mcp_servers=[
+        'http://localhost:8003/mcp/',  # MercadoLibre MCP
+        'http://localhost:8004/mcp/'   # LaTeX MCP
+    ]
+)
+
+async def generar_informe_mercado():
+    result = await agent.execute(
+        '''Busca las 5 laptops gaming más vendidas en MercadoLibre México 
+        y genera un informe LaTeX con una tabla comparativa de sus especificaciones y precios.'''
+    )
+    print(result.output)
+
+asyncio.run(generar_informe_mercado())
+```
 </div>
 
 ---
