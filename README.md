@@ -364,23 +364,6 @@ print(f"ID de ejecución: {result.execution_id}")
 - **Local File MCP**: Procesamiento de archivos locales
 - **Database MCP**: Conexión a bases de datos
 
----
-
-## 🚦 **Quick Start**
-
-```bash
-# 1. Instalar
-git clone https://github.com/CarlosMaroRuiz/deepseek-mcp-client.git
-cd deepseek-mcp-client
-pip install -r requirements.txt
-
-# 2. Configurar
-cp example.env .env
-# Editar .env con tu DEEPSEEK_API_KEY
-
-# 3. Ejecutar ejemplo
-python examples_advanced.py
-```
   
  
 </div>
