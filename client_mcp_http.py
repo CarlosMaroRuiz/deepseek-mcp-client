@@ -1,21 +1,17 @@
 from deepseek_mcp_client import DeepSeekClient
-
 import asyncio
-
 
 agent = DeepSeekClient(
     model='deepseek-chat',
-    system_prompt='Eres un asistente especializado en e-commerce.',
     mcp_servers=[{
         'url': 'http://localhost:8000/mcp/',
-        'timeout': None  
-    },]
-    
+        'timeout': None
+    }],
+
 )
 
-# Ejecución 
 async def main():
-    result = await agent.execute('Busca laptops gamer económicas calidad precio')
+    result = await agent.execute('What tools do you have available in the server MCP_SQL?')
     print(result.output)
 
 asyncio.run(main())
