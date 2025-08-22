@@ -1,3 +1,11 @@
-from .mcp_client import DeepSeekClient
+from .mcp_client import (
+    DeepSeekClient,
+    ClientResult,
+    MCPServerConfig
+)
 
-__all__ = ["DeepSeekClient"]
+__all__ = [
+    "DeepSeekClient",
+    "ClientResult", 
+    "MCPServerConfig"
+]

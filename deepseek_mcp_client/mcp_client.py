@@ -87,63 +87,50 @@ class DeepSeekMessageHandler(MessageHandler):
 
 class DeepSeekClient:
     """
-    Cliente DeepSeek con soporte completo para MCP (HTTP, STDIO, in-memory)
+    Cliente DeepSeek con soporte completo para MCP - Versión Limpia
     
     Ejemplos de uso:
     
-    # HTTP Server
+    # Uso mínimo
+    agent = DeepSeekClient(model='deepseek-chat')
+    
+    # Con prompt personalizado
+    agent = DeepSeekClient(
+        model='deepseek-chat',
+        system_prompt='Eres un asistente especializado...'
+    )
+    
+    # Con servidores MCP
     agent = DeepSeekClient(
         model='deepseek-chat',
         system_prompt='Eres un asistente...',
         mcp_servers=['http://localhost:8000/mcp/']
-    )
-    
-    # STDIO Server
-    agent = DeepSeekClient(
-        model='deepseek-chat',
-        system_prompt='Eres un asistente...',
-        mcp_servers=[{
-            'command': 'python',
-            'args': ['server.py'],
-            'env': {'API_KEY': 'secret'}
-        }]
-    )
-    
-    # Configuración mixta
-    agent = DeepSeekClient(
-        model='deepseek-chat',
-        system_prompt='Eres un asistente...',
-        mcp_servers=[
-            'http://localhost:8000/mcp/',  # HTTP
-            {'command': 'python', 'args': ['local_server.py']},  # STDIO
-            fastmcp_instance  # In-memory
-        ]
     )
     """
     
     def __init__(
         self,
         model: str,
-        system_prompt: str,
-        mcp_servers: List[Union[str, Dict[str, Any], FastMCP, MCPServerConfig]],
+        system_prompt: Optional[str] = None,
+        mcp_servers: Optional[List[Union[str, Dict[str, Any], FastMCP, MCPServerConfig]]] = None,
         enable_logging: bool = True,
         enable_progress: bool = True,
         log_level: str = "INFO"
     ):
         """
-        Inicializar DeepSeekClient con soporte completo MCP
+        Inicializar DeepSeekClient con parámetros opcionales
         
         Args:
-            model: Modelo DeepSeek (ej: 'deepseek-chat')
-            system_prompt: Prompt del sistema
-            mcp_servers: Lista de configuraciones de servidores MCP
+            model: Modelo DeepSeek (ej: 'deepseek-chat') - REQUERIDO
+            system_prompt: Prompt del sistema (OPCIONAL)
+            mcp_servers: Lista de configuraciones de servidores MCP (OPCIONAL)
             enable_logging: Habilitar logging de servidores MCP
             enable_progress: Habilitar monitoreo de progreso
             log_level: Nivel de logging
         """
         self.model = model
-        self.system_prompt = system_prompt
-        self.mcp_servers = mcp_servers
+        self.system_prompt = system_prompt or "Eres un asistente útil y amigable."
+        self.mcp_servers = mcp_servers or []
         self.enable_logging = enable_logging
         self.enable_progress = enable_progress
         
@@ -171,6 +158,12 @@ class DeepSeekClient:
         self.tool_to_client: Dict[str, Client] = {}
         self.message_handlers: List[DeepSeekMessageHandler] = []
         self._connected = False
+        
+        # Log de configuración inicial
+        if self.mcp_servers:
+            self.logger.info(f"🔧 Inicializado con {len(self.mcp_servers)} servidores MCP")
+        else:
+            self.logger.info("🤖 Inicializado en modo directo (sin MCP)")
     
     def _parse_server_config(self, server_config: Union[str, Dict[str, Any], FastMCP, MCPServerConfig]) -> MCPServerConfig:
         """Parsear configuración de servidor a MCPServerConfig"""
@@ -184,7 +177,6 @@ class DeepSeekClient:
             )
         
         elif isinstance(server_config, str):
-            # Detectar tipo por URL
             if server_config.startswith(('http://', 'https://')):
                 return MCPServerConfig(
                     url=server_config,
@@ -208,7 +200,6 @@ class DeepSeekClient:
         elif isinstance(server_config, dict):
             config = MCPServerConfig(**server_config)
             
-            # Auto-detectar tipo si no está especificado
             if not config.transport_type:
                 if config.url:
                     config.transport_type = 'http'
@@ -227,7 +218,6 @@ class DeepSeekClient:
     def _create_client(self, config: MCPServerConfig) -> Client:
         """Crear cliente FastMCP según la configuración"""
         
-        # Handlers
         message_handler = DeepSeekMessageHandler(self.logger)
         self.message_handlers.append(message_handler)
         
@@ -247,7 +237,6 @@ class DeepSeekClient:
                 else:
                     self.logger.info(f"📊 Progreso: {progress} - {message or ''}")
         
-        # Crear cliente según el tipo de transporte
         if config.transport_type == 'http':
             transport = StreamableHttpTransport(
                 url=config.url,
@@ -291,7 +280,7 @@ class DeepSeekClient:
     
     async def _connect_mcp_servers(self) -> None:
         """Conectar a todos los servidores MCP"""
-        if self._connected:
+        if self._connected or not self.mcp_servers:
             return
         
         self.logger.info(f"🔌 Conectando a {len(self.mcp_servers)} servidores MCP...")
@@ -303,7 +292,6 @@ class DeepSeekClient:
                 
                 client = self._create_client(config)
                 
-                # Verificar conexión y cargar herramientas
                 async with client:
                     await client.ping()
                     tools = await client.list_tools()
@@ -346,7 +334,6 @@ class DeepSeekClient:
             self.logger.info(f"🔧 Ejecutando {tool_name}")
             
             async with client:
-                # Ejecutar con handler de progreso personalizado
                 async def tool_progress_handler(progress: float, total: float | None, message: str | None):
                     if self.enable_progress:
                         if total is not None:
@@ -361,7 +348,6 @@ class DeepSeekClient:
                     progress_handler=tool_progress_handler if self.enable_progress else None
                 )
                 
-                # Convertir resultado a string
                 if isinstance(result, dict):
                     if 'error' in result:
                         return f"Error en {tool_name}: {result['error']}"
@@ -398,12 +384,13 @@ class DeepSeekClient:
         tools_used = []
         
         try:
-            # Conectar a MCP si es necesario
-            if not self._connected:
+            # Solo conectar a MCP si hay servidores configurados
+            if self.mcp_servers and not self._connected:
                 await self._connect_mcp_servers()
             
-            # Refrescar herramientas si es necesario
-            await self.refresh_tools()
+            # Solo refrescar herramientas si hay clientes MCP
+            if self.clients:
+                await self.refresh_tools()
             
             self.logger.info(f"🤖 Ejecutando: {instruction}")
             
@@ -413,14 +400,23 @@ class DeepSeekClient:
                 {"role": "user", "content": instruction}
             ]
             
+            # Preparar parámetros para DeepSeek
+            chat_params = {
+                "model": self.model,
+                "messages": messages,
+                "max_tokens": 4000,
+                "temperature": 0.7
+            }
+            
+            # Solo agregar herramientas si hay alguna disponible
+            if self.all_tools:
+                chat_params["tools"] = self.all_tools
+                self.logger.info(f"🛠️ Enviando {len(self.all_tools)} herramientas a DeepSeek")
+            else:
+                self.logger.info("🤖 Ejecutando en modo directo (sin herramientas)")
+            
             # Primera llamada a DeepSeek
-            response = self.deepseek_client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                tools=self.all_tools,
-                max_tokens=4000,
-                temperature=0.7
-            )
+            response = self.deepseek_client.chat.completions.create(**chat_params)
             
             message = response.choices[0].message
             
@@ -435,6 +431,8 @@ class DeepSeekClient:
                     metadata={
                         "model": self.model,
                         "direct_response": True,
+                        "mcp_enabled": bool(self.mcp_servers),
+                        "tools_available": len(self.all_tools),
                         "duration": (datetime.now() - start_time).total_seconds(),
                         "servers_connected": len(self.clients)
                     },
@@ -479,13 +477,7 @@ class DeepSeekClient:
             # Segunda llamada a DeepSeek con resultados
             self.logger.info("🤖 DeepSeek procesando resultados...")
             
-            final_response = self.deepseek_client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                tools=self.all_tools,
-                max_tokens=4000,
-                temperature=0.7
-            )
+            final_response = self.deepseek_client.chat.completions.create(**chat_params)
             
             final_output = final_response.choices[0].message.content or "Respuesta vacía"
             
@@ -497,10 +489,12 @@ class DeepSeekClient:
                 tools_used=tools_used,
                 metadata={
                     "model": self.model,
+                    "mcp_enabled": bool(self.mcp_servers),
                     "tools_executed": len(tools_used),
+                    "tools_available": len(self.all_tools),
                     "duration": (datetime.now() - start_time).total_seconds(),
                     "servers_connected": len(self.clients),
-                    "transport_types": [self._parse_server_config(s).transport_type for s in self.mcp_servers]
+                    "transport_types": [self._parse_server_config(s).transport_type for s in self.mcp_servers] if self.mcp_servers else []
                 },
                 raw_response=final_response
             )
@@ -515,6 +509,7 @@ class DeepSeekClient:
                 tools_used=tools_used,
                 metadata={
                     "model": self.model,
+                    "mcp_enabled": bool(self.mcp_servers),
                     "duration": (datetime.now() - start_time).total_seconds(),
                     "error_type": type(e).__name__
                 },
@@ -523,14 +518,16 @@ class DeepSeekClient:
     
     async def close(self):
         """Cerrar todas las conexiones"""
-        self.logger.info("🔌 Cerrando conexiones...")
-        for client in self.clients:
-            try:
-                # Los clients se cierran automáticamente con context manager
-                pass
-            except Exception as e:
-                self.logger.warning(f"⚠️ Error cerrando cliente: {e}")
-        
-        self.clients.clear()
-        self._connected = False
-        self.logger.info("✅ Conexiones cerradas")
+        if self.clients:
+            self.logger.info("🔌 Cerrando conexiones...")
+            for client in self.clients:
+                try:
+                    pass
+                except Exception as e:
+                    self.logger.warning(f"⚠️ Error cerrando cliente: {e}")
+            
+            self.clients.clear()
+            self._connected = False
+            self.logger.info("✅ Conexiones cerradas")
+        else:
+            self.logger.info("✅ No hay conexiones que cerrar")
