@@ -2,6 +2,12 @@
 
 Un cliente de Python para conectar modelos de lenguaje DeepSeek con servidores del Protocolo de Contexto de Modelo (MCP), permitiendo una integración perfecta entre modelos de IA y herramientas externas.
 
+## 📚 Documentación
+
+Para guías y referencia de la API:
+
+**[📖 Documentación Completa](https://carlosmaroruiz.github.io/deepseek-mcp-client-doc/)**
+
 ## Características
 
 - **Soporte de Múltiples Transportes**: Conexiones HTTP/HTTPS, STDIO y en memoria
@@ -375,6 +381,12 @@ MCP_TIMEOUT=30
 # DeepSeek MCP Client
 
 A Python client for connecting DeepSeek language models with Model Context Protocol (MCP) servers, enabling seamless integration between AI models and external tools.
+
+## 📚 Documentation
+
+For detailed guides, advanced examples and complete API reference:
+
+**[📖 Complete Documentation](https://carlosmaroruiz.github.io/deepseek-mcp-client-doc/)**
 
 ## Features
 
